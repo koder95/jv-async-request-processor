@@ -2,11 +2,12 @@ package mate.academy;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Main {
     public static void main(String[] args) {
         // Feel free to play with AsyncRequestProcessor in this main method if you want
-        ExecutorService executor = null; // Provide implementation that fits your needs
+        ExecutorService executor = Executors.newCachedThreadPool();
         AsyncRequestProcessor asyncRequestProcessor = new AsyncRequestProcessor(executor);
 
         // Simulating multiple concurrent requests
