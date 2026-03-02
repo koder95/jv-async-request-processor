@@ -4,40 +4,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class AsyncRequestProcessor {
     private final Executor executor;
-    private final ConcurrentMap<String, UserData> cache = new ConcurrentHashMap<>();
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ConcurrentMap<String, CompletableFuture<UserData>> cache;
 
     public AsyncRequestProcessor(Executor executor) {
         this.executor = executor;
+        this.cache = new ConcurrentHashMap<>();
     }
 
     public CompletableFuture<UserData> processRequest(String userId) {
-        lock.readLock().lock();
-        try {
-            if (cache.containsKey(userId)) {
-                return CompletableFuture.completedFuture(cache.get(userId));
-            }
-        } finally {
-            lock.readLock().unlock();
-        }
-        CompletableFuture<UserData> future = CompletableFuture.supplyAsync(
+        return cache.computeIfAbsent(userId, key -> CompletableFuture.supplyAsync(
                 () -> getUserData(userId),
                 executor
-        );
-        future.thenAcceptAsync(userData -> {
-            lock.writeLock().lock();
-            try {
-                cache.put(userId, userData);
-            } finally {
-                lock.writeLock().unlock();
-            }
-        }, executor);
-        return future;
+        ));
     }
 
     private UserData getUserData(String userId) {
